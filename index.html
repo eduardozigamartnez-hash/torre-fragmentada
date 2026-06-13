@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Crónicas de la Torre Fragmentada</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;overflow:hidden;background:#0d0a1a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e8e4f0}
+    #app{max-width:430px;margin:0 auto;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
+    .screen{display:none;flex-direction:column;height:100%;overflow-y:auto;padding:16px}
+    .screen.active{display:flex}
+    :root{
+      --bg:#0d0a1a;--bg2:#16102b;--bg3:#1e1635;--border:#2d2550;
+      --text:#e8e4f0;--text2:#9990c0;
+      --purple:#7F77DD;--purple-dark:#3C3489;
+      --amber:#EF9F27;--teal:#1D9E75;--coral:#D85A30;--red:#E24B4A
+    }
+    .top-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 0 16px;flex-shrink:0}
+    .top-bar h2{font-size:17px;font-weight:600}
+    .gems{font-size:13px;color:var(--amber);background:rgba(239,159,39,0.15);padding:5px 12px;border-radius:99px;font-weight:600;border:1px solid rgba(239,159,39,0.3)}
+    .btn{width:100%;padding:13px;border:1px solid var(--border);border-radius:12px;background:var(--bg2);color:var(--text);font-size:15px;cursor:pointer;margin-bottom:10px;transition:all 0.15s;text-align:center}
+    .btn:active{transform:scale(0.97)}
+    .btn-primary{background:var(--purple-dark);border-color:var(--purple);color:#CECBF6;font-weight:600}
+    .btn-amber{background:rgba(239,159,39,0.2);border-color:var(--amber);color:var(--amber);font-weight:600}
+    .card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+    .card.selected{border:2px solid var(--purple);background:rgba(127,119,221,0.1)}
+    .hero-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .hero-avatar{width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+    .hero-name{font-size:15px;font-weight:600}
+    .hero-race{font-size:12px;color:var(--text2);margin-top:2px}
+    .stat-row{display:flex;gap:6px;flex-wrap:wrap}
+    .stat{font-size:12px;background:var(--bg3);border-radius:6px;padding:3px 8px;color:var(--text2);border:1px solid var(--border)}
+    .stat span{color:var(--text);font-weight:600}
+    .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;margin-right:4px}
+    .badge-ssr{background:rgba(239,159,39,0.2);color:var(--amber);border:1px solid rgba(239,159,39,0.4)}
+    .badge-sr{background:rgba(127,119,221,0.2);color:var(--purple);border:1px solid rgba(127,119,221,0.4)}
+    .badge-r{background:rgba(29,158,117,0.2);color:var(--teal);border:1px solid rgba(29,158,117,0.4)}
+    .exp-bar-wrap{margin-top:8px}
+    .exp-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px}
+    .exp-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+    .exp-fill{height:100%;background:var(--amber);border-radius:3px;transition:width 0.4s}
+    .banner{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;text-align:center}
+    .banner-icon{font-size:52px;margin-bottom:10px}
+    .banner-title{font-size:18px;font-weight:700;margin-bottom:4px}
+    .banner-sub{font-size:13px;color:var(--text2)}
+    .pity-bar-wrap{margin:12px 0}
+    .pity-label{font-size:12px;color:var(--text2);margin-bottom:5px;display:flex;justify-content:space-between}
+    .pity-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+    .pity-fill{height:100%;background:var(--purple);border-radius:3px;transition:width 0.4s}
+    .prob-row{display:flex;gap:8px;margin-bottom:14px}
+    .gacha-result{text-align:center;padding:20px 0}
+    .gacha-name{font-size:16px;font-weight:700;margin-bottom:4px}
+    .gacha-race{font-size:13px;color:var(--text2);margin-bottom:10px}
+    .multi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+    .multi-card{background:var(--bg3);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)}
+    .mname{font-size:12px;font-weight:600}
+    .result-anim{animation:popIn 0.35s ease}
+    @keyframes popIn{from{transform:scale(0.6);opacity:0}to{transform:scale(1);opacity:1}}
+    .combat-section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+    .combatant{display:flex;align-items:center;gap:10px}
+    .combatant-name{font-size:13px;font-weight:600;min-width:90px}
+    .hp-wrap{flex:1}
+    .hp-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-bottom:2px}
+    .hp-fill{height:100%;border-radius:4px;transition:width 0.4s}
+    .hp-fill.hero{background:var(--teal)}
+    .hp-fill.enemy{background:var(--coral)}
+    .hp-text{font-size:11px;color:var(--text2)}
+    .enemy-big{font-size:48px;text-align:center;padding:8px 0}
+    .mana-row{display:flex;align-items:center;gap:6px;margin:10px 0 2px}
+    .mana-label{font-size:12px;color:var(--text2)}
+    .mana-dot{width:14px;height:14px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);transition:background 0.2s}
+    .mana-dot.filled{background:var(--purple);border-color:var(--purple)}
+    .skill-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .skill-btn{padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;text-align:left;transition:all 0.15s}
+    .skill-btn:active:not(:disabled){transform:scale(0.96)}
+    .skill-btn:disabled{opacity:0.35;cursor:not-allowed}
+    .skill-name{font-weight:600;font-size:13px;margin-bottom:2px}
+    .skill-cost{font-size:11px;color:var(--text2)}
+    .log{background:var(--bg3);border-radius:10px;padding:12px;font-size:13px;color:var(--text2);min-height:64px;line-height:1.7;margin-bottom:12px;border:1px solid var(--border)}
+    .dmg{color:var(--coral);font-weight:700}
+    .heal{color:var(--teal);font-weight:700}
+    .special{color:var(--purple);font-weight:700}
+    .nav-back{font-size:14px;color:var(--text2);cursor:pointer;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px;padding:6px 0}
+    .section-label{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px}
+    #music-btn{background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;padding:0}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <div id="screen-main" class="screen active">
+    <div class="top-bar">
+      <h2>Torre Fragmentada</h2>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button id="music-btn" onclick="toggleMusic()">&#9834; Música: OFF</button>
+        <span class="gems" id="gem-main">&#9830; 3000</span>
+      </div>
+    </div>
+    <div class="banner">
+      <div class="banner-icon">🗼</div>
+      <div class="banner-title">Crónicas de la Torre Fragmentada</div>
+      <div class="banner-sub">Bienvenido, Errante. La Torre te llama.</div>
+    </div>
+    <button class="btn btn-primary" onclick="showScreen('gacha')">&#10024; Invocar héroes</button>
+    <button class="btn" onclick="showScreen('heroes')">&#128100; Mis héroes</button>
+    <button class="btn btn-amber" onclick="showScreen('combat-prep')">&#9876; Entrar a la Torre</button>
+  </div>
+
+  <div id="screen-gacha" class="screen">
+    <span class="nav-back" onclick="showScreen('main')">&#8592; Volver</span>
+    <div class="top-bar">
+      <h2>Invocar</h2>
+      <span class="gems" id="gem-gacha">&#9830; 3000</span>
+    </div>
+    <div class="card">
+      <div class="section-label">Probabilidades</div>
+      <div class="prob-row">
+        <span class="badge badge-ssr">SSR 3%</span>
+        <span class="badge badge-sr">SR 15%</span>
+        <span class="badge badge-r">R 82%</span>
+      </div>
+      <div class="pity-bar-wrap">
+        <div class="pity-label"><span>Pity garantizado</span><span id="pity-txt">0 / 80</span></div>
+        <div class="pity-bar"><div class="pity-fill" id="pity-fill" style="width:0%"></div></div>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Cada 80 invocaciones garantiza un SSR.</div>
+    </div>
+    <div id="gacha-result"></div>
+    <button class="btn btn-primary" onclick="doGacha(1)">Invocar x1 — 150 &#9830;</button>
+    <button class="btn" onclick="doGacha(10)">Invocar x10 — 1500 &#9830;</button>
+  </div>
+
+  <div id="screen-heroes" class="screen">
+    <span class="nav-back" onclick="showScreen('main')">&#8592; Volver</span>
+    <div class="top-bar"><h2>Mis héroes</h2></div>
+    <div id="hero-list"></div>
+  </div>
+
+  <div id="screen-combat-prep" class="screen">
+    <span class="nav-back" onclick="showScreen('main')">&#8592; Volver</span>
+    <div class="top-bar"><h2>Piso 1 — Umbral Roto</h2></div>
+    <div class="section-label">Elige tu héroe</div>
+    <div id="combat-select"></div>
+    <button class="btn btn-amber" id="btn-fight" onclick="startCombat()" disabled>Entrar al piso &#9876;</button>
+  </div>
+
+  <div id="screen-combat" class="screen">
+    <div class="top-bar"><h2>Piso 1 — Umbral Roto</h2></div>
+    <div class="combat-section">
+      <div class="section-label">Enemigo</div>
+      <div class="enemy-big" id="enemy-avatar">👁️</div>
+      <div class="combatant">
+        <div class="combatant-name" id="enemy-name">—</div>
+        <div class="hp-wrap">
+          <div class="hp-bar"><div class="hp-fill enemy" id="enemy-hp-bar" style="width:100%"></div></div>
+          <div class="hp-text" id="enemy-hp-text">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="combat-section">
+      <div class="section-label">Tu héroe</div>
+      <div class="combatant">
+        <div class="combatant-name" id="hero-combat-name">—</div>
+        <div class="hp-wrap">
+          <div class="hp-bar"><div class="hp-fill hero" id="hero-hp-bar" style="width:100%"></div></div>
+          <div class="hp-text" id="hero-hp-text">—</div>
+        </div>
+      </div>
+      <div class="mana-row">
+        <span class="mana-label">Eco:</span>
+        <div id="mana-dots"></div>
+      </div>
+    </div>
+    <div class="log" id="combat-log">Prepárate para combatir...</div>
+    <div class="skill-grid" id="skill-grid"></div>
+    <button class="btn" id="btn-end" style="display:none" onclick="showScreen('main')">Volver al mapa</button>
+  </div>
+
+</div>
+<script>const HEROES = [
+  { id:'kael', name:'Kael el Errante', race:'Humano', rarity:'SSR', avatar:'🧙', bg:'rgba(127,119,221,0.2)',
+    baseAtk:85, baseHp:120, img:'kael',
+    skills:[
+      {name:'Golpe del Eco', cost:0, dmg:28, heal:0},
+      {name:'Memoria Perdida', cost:2, dmg:55, heal:0},
+      {name:'Velo del Errante', cost:1, dmg:0, heal:30},
+      {name:'Fragmento de Torre', cost:3, dmg:90, heal:0}
+    ]},
+  { id:'aelith', name:'Aelith Veyrhan', race:'Veyrhan', rarity:'SSR', avatar:'✨', bg:'rgba(127,119,221,0.2)',
+    baseAtk:70, baseHp:100, img:'aelith',
+    skills:[
+      {name:'Eco Resonante', cost:0, dmg:22, heal:0},
+      {name:'Voz del Ancestro', cost:2, dmg:48, heal:0},
+      {name:'Susurro Sanador', cost:1, dmg:0, heal:35},
+      {name:'Coro del Eco', cost:3, dmg:80, heal:0}
+    ]},
+  { id:'drakar', name:'Drakar Llama Negra', race:'Draekari', rarity:'SR', avatar:'🐉', bg:'rgba(216,90,48,0.15)',
+    baseAtk:95, baseHp:90, img:'drakar',
+    skills:[
+      {name:'Llamarada', cost:0, dmg:32, heal:0},
+      {name:'Escama Ígnea', cost:1, dmg:0, heal:25},
+      {name:'Aliento Oscuro', cost:2, dmg:60, heal:0},
+      {name:'Furia Draekari', cost:3, dmg:95, heal:0}
+    ]},
+  { id:'lyra', name:'Lyra Luz Rota', race:'Nivarii', rarity:'SR', avatar:'🌙', bg:'rgba(127,119,221,0.15)',
+    baseAtk:60, baseHp:110, img:'lyra',
+    skills:[
+      {name:'Destellos', cost:0, dmg:20, heal:0},
+      {name:'Escudo Lunar', cost:1, dmg:0, heal:40},
+      {name:'Prisma Sagrado', cost:2, dmg:50, heal:0},
+      {name:'Colapso de Luz', cost:3, dmg:85, heal:0}
+    ]},
+  { id:'thal', name:'Thal del Olvido', race:'Thalriem', rarity:'R', avatar:'🌊', bg:'rgba(29,158,117,0.15)',
+    baseAtk:50, baseHp:130, img:'thal',
+    skills:[
+      {name:'Corriente Fría', cost:0, dmg:18, heal:0},
+      {name:'Memoria Sumergida', cost:1, dmg:0, heal:28},
+      {name:'Marea Oscura', cost:2, dmg:42, heal:0},
+      {name:'Abismo Total', cost:3, dmg:75, heal:0}
+    ]},
+  { id:'soren', name:'Soren Veyrhan', race:'Veyrhan', rarity:'R', avatar:'🔮', bg:'rgba(29,158,117,0.1)',
+    baseAtk:45, baseHp:95, img:'soren',
+    skills:[
+      {name:'Pulso de Eco', cost:0, dmg:16, heal:0},
+      {name:'Reflejo Ancestral', cost:1, dmg:0, heal:22},
+      {name:'Eco Amplificado', cost:2, dmg:38, heal:0},
+      {name:'Resonancia Final', cost:3, dmg:65, heal:0}
+    ]}
+];
+
+const PIXEL_PORTRAITS = {
+  kael:   ['00333300','03666630','03666630','00333300','01111100','01010100','01010100','00000000'],
+  aelith: ['00111100','01444410','01444410','00111100','00212200','00212200','00111100','00000000'],
+  drakar: ['03300330','03333330','03666630','00333300','00333300','01333100','01010100','00000000'],
+  lyra:   ['00222200','02555520','02555520','00222200','00212200','00111100','00101000','00000000'],
+  thal:   ['00444400','04111140','04111140','00444400','00414400','00414400','00414400','00000000'],
+  soren:  ['00111100','01333310','01333310','00111100','00212200','00111100','00010000','00000000'],
+};
+
+const PALETTE = {
+  '0':'transparent','1':'#9990c0','2':'#AFA9EC','3':'#D85A30',
+  '4':'#1D9E75','5':'#CECBF6','6':'#EF9F27'
+};
+
+function makePixelArt(id, size=48) {
+  const rows = PIXEL_PORTRAITS[id] || PIXEL_PORTRAITS['kael'];
+  const px = size / 8;
+  let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated">`;
+  rows.forEach((row, y) => {
+    row.split('').forEach((c, x) => {
+      const color = PALETTE[c];
+      if (color && color !== 'transparent') {
+        svg += `<rect x="${x*px}" y="${y*px}" width="${px}" height="${px}" fill="${color}"/>`;
+      }
+    });
+  });
+  svg += '</svg>';
+  return svg;
+}
+
+const ENEMIES = [
+  {name:'Eco Corrupto',   avatar:'👁️', maxHp:120, atk:18, exp:30},
+  {name:'Guardián Roto',  avatar:'🗿', maxHp:150, atk:22, exp:45},
+  {name:'Sombra de Torre',avatar:'🌑', maxHp:100, atk:28, exp:40}
+];
+
+function expToLevel(exp) { return Math.floor(Math.sqrt(exp / 20)) + 1; }
+function expForLevel(lv) { return Math.pow(lv - 1, 2) * 20; }
+function expForNext(lv)  { return expForLevel(lv + 1); }
+
+function heroAtk(base, lv) { return Math.round(base * (1 + (lv - 1) * 0.12)); }
+function heroHp(base, lv)  { return Math.round(base * (1 + (lv - 1) * 0.10)); }
+
+const state = {
+  gems: 3000,
+  pity: 0,
+  owned: ['kael'],
+  heroExp: { kael: 0 },
+  selectedHero: null,
+  combat: null,
+  music: false,
+  audioCtx: null
+};
+
+let musicInterval = null;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  syncGems();
+  if (id === 'heroes') renderHeroes();
+  if (id === 'combat-prep') renderCombatPrep();
+}
+
+function syncGems() {
+  ['gem-main','gem-gacha'].forEach(elId => {
+    const el = document.getElementById(elId);
+    if (el) el.textContent = '♦ ' + state.gems;
+  });
+}
+
+function getRarity() {
+  state.pity++;
+  if (state.pity >= 80) { state.pity = 0; return 'SSR'; }
+  const r = Math.random() * 100;
+  if (r < 3) { state.pity = 0; return 'SSR'; }
+  if (r < 18) return 'SR';
+  return 'R';
+}
+
+function pickHero(rarity) {
+  const pool = HEROES.filter(h => h.rarity === rarity);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function doGacha(times) {
+  const cost = times * 150;
+  if (state.gems < cost) {
+    document.getElementById('gacha-result').innerHTML = '<div style="color:#E24B4A;font-size:13px;padding:10px 0;text-align:center">Gemas insuficientes.</div>';
+    return;
+  }
+  state.gems -= cost;
+  syncGems();
+
+  const results = [];
+  for (let i = 0; i < times; i++) {
+    const rarity = getRarity();
+    const hero = pickHero(rarity);
+    results.push({hero, rarity});
+    if (!state.owned.includes(hero.id)) {
+      state.owned.push(hero.id);
+      state.heroExp[hero.id] = 0;
+    }
+  }
+
+  const pct = Math.round((state.pity / 80) * 100);
+  document.getElementById('pity-fill').style.width = pct + '%';
+  document.getElementById('pity-txt').textContent = state.pity + ' / 80';
+
+  const area = document.getElementById('gacha-result');
+  if (times === 1) {
+    const r = results[0];
+    const rc = r.rarity === 'SSR' ? 'badge-ssr' : r.rarity === 'SR' ? 'badge-sr' : 'badge-r';
+    area.innerHTML = `<div class="gacha-result result-anim">
+      <div style="margin-bottom:8px">${makePixelArt(r.hero.id, 80)}</div>
+      <div class="gacha-name">${r.hero.name}</div>
+      <div class="gacha-race">${r.hero.race}</div>
+      <span class="badge ${rc}">${r.rarity}</span>
+    </div>`;
+  } else {
+    let html = '<div class="multi-grid">';
+    results.forEach(r => {
+      const rc = r.rarity === 'SSR' ? 'badge-ssr' : r.rarity === 'SR' ? 'badge-sr' : 'badge-r';
+      html += `<div class="multi-card">
+        <div style="display:flex;justify-content:center;margin-bottom:4px">${makePixelArt(r.hero.id, 48)}</div>
+        <div class="mname">${r.hero.name}</div>
+        <span class="badge ${rc}" style="margin-top:4px">${r.rarity}</span>
+      </div>`;
+    });
+    html += '</div>';
+    area.innerHTML = html;
+  }
+}
+
+function renderHeroCard(h, clickable=false, showSelect=false) {
+  const rc = h.rarity === 'SSR' ? 'badge-ssr' : h.rarity === 'SR' ? 'badge-sr' : 'badge-r';
+  const exp = state.heroExp[h.id] || 0;
+  const lv = expToLevel(exp);
+  const atk = heroAtk(h.baseAtk, lv);
+  const hp  = heroHp(h.baseHp, lv);
+  const curExp = exp - expForLevel(lv);
+  const needExp = expForNext(lv) - expForLevel(lv);
+  const expPct = Math.round((curExp / needExp) * 100);
+  const clickAttr = clickable ? `onclick="selectHero('${h.id}')"` : '';
+  return `<div class="card${showSelect ? '' : ''}" id="pick-${h.id}" ${clickAttr} style="cursor:${clickable?'pointer':'default'}">
+    <div class="hero-header">
+      <div class="hero-avatar" style="background:${h.bg}">${makePixelArt(h.id, 48)}</div>
+      <div style="flex:1">
+        <div class="hero-name">${h.name}</div>
+        <div class="hero-race">${h.race} &middot; <span class="badge ${rc}">${h.rarity}</span></div>
+        <div style="font-size:12px;color:var(--amber);margin-top:3px">Nv. ${lv}</div>
+      </div>
+    </div>
+    <div class="exp-bar-wrap">
+      <div class="exp-label"><span>EXP</span><span>${curExp} / ${needExp}</span></div>
+      <div class="exp-bar"><div class="exp-fill" style="width:${expPct}%"></div></div>
+    </div>
+    <div class="stat-row" style="margin-top:8px">
+      <span class="stat">ATK <span>${atk}</span></span>
+      <span class="stat">HP <span>${hp}</span></span>
+      ${!clickable ? `<span class="stat">Habilidades <span>${h.skills.length}</span></span>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderHeroes() {
+  const list = document.getElementById('hero-list');
+  const owned = HEROES.filter(h => state.owned.includes(h.id));
+  if (!owned.length) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px 0">Aún no tienes héroes. ¡Invoca primero!</div>';
+    return;
+  }
+  list.innerHTML = owned.map(h => renderHeroCard(h, false, false)).join('');
+}
+
+function renderCombatPrep() {
+  const area = document.getElementById('combat-select');
+  const owned = HEROES.filter(h => state.owned.includes(h.id));
+  area.innerHTML = owned.map(h => renderHeroCard(h, true, true)).join('');
+  state.selectedHero = null;
+  document.getElementById('btn-fight').disabled = true;
+}
+
+function selectHero(id) {
+  state.selectedHero = id;
+  document.querySelectorAll('#combat-select .card').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById('pick-' + id);
+  if (el) el.classList.add('selected');
+  document.getElementById('btn-fight').disabled = false;
+}
+
+function startCombat() {
+  const base = HEROES.find(h => h.id === state.selectedHero);
+  const lv = expToLevel(state.heroExp[base.id] || 0);
+  const atk = heroAtk(base.baseAtk, lv);
+  const maxHp = heroHp(base.baseHp, lv);
+  const enemyBase = ENEMIES[Math.floor(Math.random() * ENEMIES.length)];
+  state.combat = {
+    heroId: base.id,
+    hero: { ...base, lv, atk, maxHp, hp: maxHp, mana: 0, maxMana: 3 },
+    enemy: { ...enemyBase, hp: enemyBase.maxHp },
+    over: false
+  };
+  showScreen('combat');
+  renderCombat();
+  setLog('El combate comienza. ' + base.avatar + ' (Nv.'+lv+') vs ' + enemyBase.avatar + ' ' + enemyBase.name + '!');
+}
+
+function renderCombat() {
+  const c = state.combat;
+  document.getElementById('hero-combat-name').textContent = c.hero.avatar + ' ' + c.hero.name + ' Nv.' + c.hero.lv;
+  document.getElementById('enemy-avatar').textContent = c.enemy.avatar;
+  document.getElementById('enemy-name').textContent = c.enemy.name;
+  updateBars();
+  renderMana();
+  renderSkills();
+}
+
+function updateBars() {
+  const c = state.combat;
+  const hPct = Math.max(0, Math.round(c.hero.hp / c.hero.maxHp * 100));
+  const ePct = Math.max(0, Math.round(c.enemy.hp / c.enemy.maxHp * 100));
+  document.getElementById('hero-hp-bar').style.width = hPct + '%';
+  document.getElementById('enemy-hp-bar').style.width = ePct + '%';
+  document.getElementById('hero-hp-text').textContent = Math.max(0,c.hero.hp) + ' / ' + c.hero.maxHp + ' HP';
+  document.getElementById('enemy-hp-text').textContent = Math.max(0,c.enemy.hp) + ' / ' + c.enemy.maxHp + ' HP';
+}
+
+function renderMana() {
+  const c = state.combat;
+  let html = '';
+  for (let i = 0; i < c.hero.maxMana; i++) {
+    html += `<div class="mana-dot${i < c.hero.mana ? ' filled' : ''}"></div>`;
+  }
+  document.getElementById('mana-dots').innerHTML = html;
+}
+
+function renderSkills() {
+  const c = state.combat;
+  document.getElementById('skill-grid').innerHTML = c.hero.skills.map((s, i) => {
+    const ok = !c.over && c.hero.mana >= s.cost;
+    return `<button class="skill-btn" onclick="useSkill(${i})" ${ok ? '' : 'disabled'}>
+      <div class="skill-name">${s.name}</div>
+      <div class="skill-cost">${s.cost === 0 ? 'Básico' : 'Eco: ' + s.cost} &middot; ${s.dmg > 0 ? 'DMG '+s.dmg : 'Cura '+s.heal}</div>
+    </button>`;
+  }).join('');
+}
+
+function setLog(msg) {
+  document.getElementById('combat-log').innerHTML = msg;
+}
+
+function giveExp(heroId, amount) {
+  const prev = state.heroExp[heroId] || 0;
+  const prevLv = expToLevel(prev);
+  state.heroExp[heroId] = prev + amount;
+  const newLv = expToLevel(state.heroExp[heroId]);
+  return newLv > prevLv ? newLv : null;
+}
+
+function useSkill(idx) {
+  const c = state.combat;
+  if (c.over) return;
+  const s = c.hero.skills[idx];
+  if (c.hero.mana < s.cost) return;
+
+  c.hero.mana -= s.cost;
+  let msg = '';
+
+  if (s.dmg > 0) {
+    const dmg = s.dmg + Math.floor(Math.random() * 10) - 4;
+    c.enemy.hp -= dmg;
+    msg = `<span class="special">${c.hero.avatar} ${s.name}:</span> <span class="dmg">-${dmg} HP</span> al enemigo.`;
+  } else {
+    const heal = s.heal + Math.floor(Math.random() * 8);
+    c.hero.hp = Math.min(c.hero.maxHp, c.hero.hp + heal);
+    msg = `<span class="special">${c.hero.avatar} ${s.name}:</span> <span class="heal">+${heal} HP</span> recuperados.`;
+  }
+
+  if (c.hero.mana < c.hero.maxMana) c.hero.mana++;
+  updateBars();
+  renderMana();
+
+  if (c.enemy.hp <= 0) {
+    const expGained = c.enemy.exp;
+    const newLv = giveExp(c.heroId, expGained);
+    let extra = `<br><span class="heal">&#10024; Victoria! +${expGained} EXP.</span>`;
+    if (newLv) extra += ` <span class="special">&#11014; Nivel ${newLv}!</span>`;
+    setLog(msg + extra);
+    c.over = true;
+    renderSkills();
+    document.getElementById('btn-end').style.display = 'block';
+    return;
+  }
+
+  setTimeout(() => {
+    const dmg = c.enemy.atk + Math.floor(Math.random() * 8) - 3;
+    c.hero.hp -= dmg;
+    const full = msg + '<br>' + c.enemy.avatar + ' ataca: <span class="dmg">-' + dmg + ' HP</span>.';
+    updateBars();
+    renderSkills();
+    if (c.hero.hp <= 0) {
+      setLog(full + '<br><span class="dmg">Derrota. El Eco te consume...</span>');
+      c.over = true;
+      document.getElementById('btn-end').style.display = 'block';
+    } else {
+      setLog(full);
+    }
+  }, 600);
+}
+
+function toggleMusic() {
+  state.music = !state.music;
+  const btn = document.getElementById('music-btn');
+  if (state.music) {
+    btn.textContent = '♪ Música: ON';
+    btn.style.color = 'var(--amber)';
+    startMusic();
+  } else {
+    btn.textContent = '♪ Música: OFF';
+    btn.style.color = 'var(--text2)';
+    stopMusic();
+  }
+}
+
+function startMusic() {
+  if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const ctx = state.audioCtx;
+  const scale = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+  const melody = [0,2,4,7,4,2,0,2,4,5,7,5,4,2,0,0];
+  let step = 0;
+
+  function playNote() {
+    if (!state.music) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.value = scale[melody[step % melody.length]] * 0.5;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+    step++;
+  }
+
+  playNote();
+  musicInterval = setInterval(playNote, 500);
+}
+
+function stopMusic() {
+  if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
+}
+
+syncGems();
+</script>
+</body>
+</html>
